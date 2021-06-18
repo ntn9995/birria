@@ -84,7 +84,6 @@ class Ingredient:
     __slots__ = (
         "name",
         "type",
-        "short",
         "default",
         "default_factory",
         "help",
