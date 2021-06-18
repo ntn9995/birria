@@ -215,6 +215,15 @@ class Recipe:
 > python myprog.py -flag -opt-list some more strings 1 2 3         # bad
 ```
 
+### Long names
+For longer ingredient names, snake-casing is recommended, as the parser accepts
+both the snake-cased names and dash-separated names
+
+```bash
+python myprog.py -some-very-long-name-for-a-flag    # good
+python myprog.py -some_very_long_name_for_a_flag    # also good  
+```
+
 ## Limitations
 Here are current limitations of `birria`. Some of them are by design and therefore
 will likely never be "fixed".
