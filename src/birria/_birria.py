@@ -15,7 +15,7 @@ from typing import (
     Dict,
     Mapping,
     Union,
-    Optional
+    Optional,
 )
 
 
@@ -45,7 +45,13 @@ _SUPPORTED_TYPES = (
     List,
 )
 _SUPPORTED_LIST_TYPES = (list, List[str], List[int], List[float], List)
-_LIST_CASTS: Dict[Any, type] = {list: str, List: str, List[str]: str, List[int]: int, List[float]: float}
+_LIST_CASTS: Dict[Any, type] = {
+    list: str,
+    List: str,
+    List[str]: str,
+    List[int]: int,
+    List[float]: float,
+}
 
 # default prefixes used by the parser to match
 # against option strings
@@ -82,7 +88,6 @@ class Ingredient:
         "default",
         "default_factory",
         "help",
-        "metadata",
     )
 
     def __init__(
@@ -90,16 +95,12 @@ class Ingredient:
         default: Any,
         default_factory: Callable[[], Any],
         help: Optional[str],
-        metadata: Optional[dict],
     ):
-        self.name: str = None                   # type: ignore[assignment]
-        self.type: type = None                  # type: ignore[assignment]
+        self.name: str = None  # type: ignore[assignment]
+        self.type: type = None  # type: ignore[assignment]
         self.default = default
         self.default_factory = default_factory
         self.help = help
-        self.metadata = (
-            _EMPTY_METADATA if metadata is None else MappingProxyType(metadata)
-        )
 
     def __repr__(self) -> str:
         return (
@@ -108,7 +109,6 @@ class Ingredient:
             f"type={self.type!r},"
             f"default={self.default!r},"
             f"default_factory={self.default_factory!r},"
-            f"metadata={self.metadata!r},"
             ")"
         )
 
@@ -128,11 +128,11 @@ class Ingredient:
 
 
 def ingredient(
-    *, default=MISSING, default_factory=MISSING, help: str = None, metadata: dict = None
+    *, default=MISSING, default_factory=MISSING, help: str = None
 ) -> Ingredient:
     if default is not MISSING and default_factory is not MISSING:
         raise ValueError("can't specify both default and default factory")
-    return Ingredient(default, default_factory, help, metadata)
+    return Ingredient(default, default_factory, help)
 
 
 def _create_fn(
@@ -609,7 +609,7 @@ def serve(
                     _print_err_and_exit(
                         f"Value {arg} of the wrong type, needs {ingredient.type}"
                     )
-            return recipe(**cooking)    # type: ignore[call-arg]
+            return recipe(**cooking)  # type: ignore[call-arg]
         else:
             vals = []
             ingredient = req_ingredients[0]
@@ -626,7 +626,7 @@ def serve(
                     f"Value {arg} for {ingredient.name} of the wrong type, needs {cast}"
                 )
 
-            return recipe(vals)     # type: ignore[call-arg]
+            return recipe(vals)  # type: ignore[call-arg]
 
     # if the first named arg appears first in the argument list,
     # all the positional arguments are at the end of the list,
@@ -740,4 +740,4 @@ def serve(
                     else:
                         cooking[name] = vals
 
-    return recipe(**cooking)    # type: ignore[call-arg]
+    return recipe(**cooking)  # type: ignore[call-arg]
