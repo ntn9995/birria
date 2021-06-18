@@ -1,6 +1,7 @@
 import builtins
 from itertools import chain
 import re
+from shutil import get_terminal_size
 import sys
 from types import MappingProxyType, MemberDescriptorType
 from typing import (
@@ -52,6 +53,18 @@ _LIST_CASTS: Dict[Any, type] = {
     List[int]: int,
     List[float]: float,
 }
+_TYPE_STR: Dict[Any, str] = {
+    str: "string",
+    int: "integer",
+    float: "decimal",
+    bool: "flag",
+    list: "string(s)",
+    List: "string(s)",
+    List[str]: "string(s)",
+    List[int]: "integer(s)",
+    List[float]: "decimal(s)",
+}
+_HELP_OPT = ("help", "h")
 
 # default prefixes used by the parser to match
 # against option strings
@@ -108,6 +121,7 @@ class Ingredient:
             f"type={self.type!r},"
             f"default={self.default!r},"
             f"default_factory={self.default_factory!r},"
+            f"help={self.help!r}"
             ")"
         )
 
@@ -442,6 +456,140 @@ def _print_err_and_exit(msg: str, out: IO = sys.stderr, exit_code=1, cr: str = "
     sys.exit(exit_code)
 
 
+def _str_to_lines(s: str, width: int) -> List[str]:
+    # splits the string into a list
+    # of lines, separated at whitespaces
+    # so that each line's length is as close
+    # to the width as possible
+    split_idx = []
+    last_space_idx = 0
+    for i, c in enumerate(s):
+        if c == " ":
+            last_space_idx = i
+        if i and (i + 1) % width == 0:
+            split_idx.append(last_space_idx)
+
+    if not split_idx:
+        return [s]
+
+    lines = []
+    start_from = 0
+    for i in split_idx:
+        lines.append(s[start_from:i])
+        start_from = i + 1
+    lines.append(s[split_idx[-1] + 1 :])
+    return lines
+
+
+def _help_str(
+    name: str,
+    type_str: str,
+    width: int,
+    help_padding: int,
+    help_str: str,
+) -> str:
+
+    name_and_type = f"{name}: {type_str}"
+    help_str_width = width - len(name_and_type) - help_padding
+
+    help_lines = _str_to_lines(help_str, help_str_width)
+    padding = " " * help_padding
+    help_lines[0] = f"{name_and_type}{padding}{help_lines[0]}"
+    padding = " " * (len(name_and_type) + help_padding)
+    for i in range(1, len(help_lines)):
+        help_lines[i] = f"{padding}{help_lines[i]}"
+
+    return "\n".join(help_lines)
+
+
+def _print_help(
+    file: IO,
+    required: Iterable[Ingredient],
+    optional: Iterable[Ingredient],
+    width: int = None,
+    max_width: int = None,
+    prefixes: List[str] = None,
+):
+
+    if not width:
+        width = get_terminal_size().columns
+        width -= 2
+
+    if max_width:
+        width = min(max_width, width)
+    space_rgx = re.compile(r"\s+")
+    max_padding = width // 2
+
+    req_help_strs = []
+    for ingredient in required:
+        type_str = _TYPE_STR[ingredient.type]
+        help_msg = "" if not ingredient.help else space_rgx.sub(" ", ingredient.help)
+
+        if not help_msg:
+            req_help_strs.append(f"{ingredient.name}: {type_str}")
+        else:
+            req_help_strs.append(
+                _help_str(
+                    ingredient.name,
+                    type_str,
+                    width,
+                    max_padding - len(ingredient.name) - len(type_str),
+                    help_msg,
+                )
+            )
+
+    opt_help_strs = []
+    if prefixes:
+        for ingredient in optional:
+            name = ", ".join(f"{p}{ingredient.name}" for p in prefixes)
+            type_str = _TYPE_STR[ingredient.type]
+            help_msg = (
+                "" if not ingredient.help else space_rgx.sub(" ", ingredient.help)
+            )
+
+            if not help_msg:
+                opt_help_strs.append(f"{name}: {type_str}")
+            else:
+                opt_help_strs.append(
+                    _help_str(
+                        name,
+                        type_str,
+                        width,
+                        max_padding - len(name) - len(type_str),
+                        help_msg,
+                    )
+                )
+    else:
+        for ingredient in optional:
+            type_str = _TYPE_STR[ingredient.type]
+            help_msg = (
+                "" if not ingredient.help else space_rgx.sub(" ", ingredient.help)
+            )
+
+            if not help_msg:
+                opt_help_strs.append(f"{ingredient.name}: {type_str}")
+            else:
+                opt_help_strs.append(
+                    _help_str(
+                        ingredient.name,
+                        type_str,
+                        width,
+                        max_padding - len(ingredient.name) - len(type_str),
+                        help_msg,
+                    )
+                )
+
+    sep = "-" * width
+
+    if req_help_strs:
+        file.write(f"Required\n{sep}\n")
+        file.write("\n".join(req_help_strs) + "\n")
+
+    if opt_help_strs:
+        file.write(f"Optional\n{sep}\n")
+        file.write("\n".join(opt_help_strs) + "\n")
+
+
 def serve(
     recipe: Type[CookedBirria],
     raw_ingredients: List[str] = None,
@@ -499,6 +647,9 @@ def serve(
 
     seen_req_list = False
     for f in ingredients(recipe):
+        if f.name in _HELP_OPT:
+            raise TypeError(f"{f.name} is reserved as help option")
+
         default = getattr(recipe, f.name, MISSING)
         if default is MISSING:
             if f.type == bool:
@@ -536,8 +687,34 @@ def serve(
             opt_ingredients[f.name] = f
 
     num_req = len(req_ingredients)
-    # just some sanity checks
+    if not prefixes:
+        prefixes = _DEFAULT_PREFIXES
 
+    if extra_prefixes:
+        prefixes += extra_prefixes
+
+    for p in prefixes:
+        if p not in _ALLOWED_PREFIXES:
+            raise ValueError(f"'{p}' not supported as a prefix")
+
+    prefix_group = r"|".join(_ALLOWED_PREFIXES[p] for p in prefixes)
+    help_opt_group = r"|".join(_HELP_OPT)
+    help_opt_rgx = re.compile(rf"({prefix_group})({help_opt_group})")
+
+    # print help if the help option string is the only argument
+    if len(preprepped_ingredients) == 1 and help_opt_rgx.match(
+        preprepped_ingredients[0]
+    ):
+        _print_help(
+            sys.stderr,
+            req_ingredients,
+            opt_ingredients.values(),
+            max_width=40,
+            prefixes=prefixes,
+        )
+        sys.exit(0)
+
+    # just some sanity checks
     if num_req and not preprepped_ingredients:
         _print_err_and_exit(f"No arguments! Need at least {num_req}")
 
@@ -550,16 +727,6 @@ def serve(
             "Use a default field if you want to specify more list fields"
         )
 
-    if not prefixes:
-        prefixes = _DEFAULT_PREFIXES
-
-    if extra_prefixes:
-        prefixes += extra_prefixes
-
-    for p in prefixes:
-        if p not in _ALLOWED_PREFIXES:
-            raise ValueError(f"'{p}' not supported as a prefix")
-
     # if the first argument is a named argument,
     # all the postional arguments will follow the last
     # named argument. Likewise, if the first argument
@@ -567,7 +734,6 @@ def serve(
     # follow the last positional argument.
     # Force this convention to make our life easier
 
-    prefix_group = r"|".join(_ALLOWED_PREFIXES[p] for p in prefixes)
     name_list = []
     for n in opt_ingredients.keys():
         name_list.append(n)

@@ -2,6 +2,7 @@ import itertools
 from typing import List, Tuple, TypeVar, Type, Callable, Any
 
 import pytest
+from pytest import CaptureFixture
 
 from birria import (
     cook,
@@ -1061,3 +1062,82 @@ def test_serve_snake_case_names():
             assert served.long_name == exp_a
             assert served.even_longer_name == exp_b
             assert served.ridiculously_long_name == exp_c
+
+
+@pytest.mark.parametrize(
+    "prefixes",
+    [
+        ["-", "+", "/"]
+    ]
+)
+def test_help(prefixes: List[str], capsys: CaptureFixture[str]):
+
+    # test that "help" and "h" are reserved
+    @cook
+    class Recipe:
+        help: str
+
+    with pytest.raises(TypeError):
+        _ = serve(Recipe)
+
+    @cook
+    class Recipe:
+        h: str
+
+    with pytest.raises(TypeError):
+        _ = serve(Recipe)
+
+    @cook
+    class Recipe:
+        help: str = "help"
+
+    with pytest.raises(TypeError):
+        _ = serve(Recipe)
+
+    @cook
+    class Recipe:
+        h: str = None
+
+    with pytest.raises(TypeError):
+        _ = serve(Recipe)
+
+    # test that we print out something to stderr and exit 0
+    # when the help option string is the only argument on the cli,
+    # don't really need to test for the exact help string
+    # as that's subject to change
+    @cook
+    class Recipe:
+        a: int
+        b: float
+        c: str
+        d: bool
+        f: List[str] = None
+
+    help_opt_strs = ["".join(s) for s in itertools.product(prefixes, ("h", "help"))]
+
+    for s in help_opt_strs:
+        assert_exit(0, serve, Recipe, ["-h"])
+        captured = capsys.readouterr().err
+        assert captured
+
+    # test that parsing behaves normally if an item is the same
+    # as the help option string. The parser should just treat
+    # that as any other item in the list.
+
+    exp_a = 1
+    exp_b = 2.0
+    exp_c = "hello"
+
+    for s in help_opt_strs:
+        args = [str(exp_a), str(exp_b), s]
+        served = serve(Recipe, raw_ingredients=args)
+        assert served.a == exp_a
+        assert served.b == exp_b
+        assert served.c == s
+        args = [str(exp_a), str(exp_b), exp_c, "-f", s, "more", "strings", "-d"]
+        served = serve(Recipe, raw_ingredients=args)
+        assert served.a == exp_a
+        assert served.b == exp_b
+        assert served.c == exp_c
+        assert served.d
+        assert served.f == [s, "more", "strings"]
