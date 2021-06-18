@@ -1,5 +1,5 @@
 import itertools
-from typing import List, Tuple, TypeVar, Type, Callable, Any
+from typing import List, Tuple, TypeVar, Type, Callable, Any, Union
 
 import pytest
 from pytest import CaptureFixture
@@ -17,6 +17,10 @@ from birria import (
 
 S = TypeVar("S", int, str, float)
 AllowedList = List[S]
+IngredientType = Union[
+    int, float, str, bool, list, List[str], List[int], List[float], List
+]
+
 CAST_LOOKUP = {
     list: str,
     List: str,
@@ -1064,12 +1068,7 @@ def test_serve_snake_case_names():
             assert served.ridiculously_long_name == exp_c
 
 
-@pytest.mark.parametrize(
-    "prefixes",
-    [
-        ["-", "+", "/"]
-    ]
-)
+@pytest.mark.parametrize("prefixes", [["-", "+", "/"]])
 def test_help(prefixes: List[str], capsys: CaptureFixture[str]):
 
     # test that "help" and "h" are reserved
@@ -1141,3 +1140,20 @@ def test_help(prefixes: List[str], capsys: CaptureFixture[str]):
         assert served.c == exp_c
         assert served.d
         assert served.f == [s, "more", "strings"]
+
+
+@pytest.mark.parametrize("prefixes", [("-", "+", "/")])
+def test_alias(prefixes: List[str]):
+    @cook
+    class Recipe:
+        a: int
+        b: bool = ingredient(alias="blah")
+
+    exp_a = 1
+    served = serve(Recipe, raw_ingredients=[str(exp_a), "-b"], prefixes=prefixes)
+    assert served.a == exp_a
+    assert served.b
+
+    served = serve(Recipe, raw_ingredients=[str(exp_a), "-blah"], prefixes=prefixes)
+    assert served.a == exp_a
+    assert served.b
