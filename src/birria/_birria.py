@@ -699,7 +699,7 @@ def serve(
 
     prefix_group = r"|".join(_ALLOWED_PREFIXES[p] for p in prefixes)
     help_opt_group = r"|".join(_HELP_OPT)
-    help_opt_rgx = re.compile(rf"({prefix_group})({help_opt_group})")
+    help_opt_rgx = re.compile(rf"^({prefix_group})({help_opt_group})$")
 
     # print help if the help option string is the only argument
     if len(preprepped_ingredients) == 1 and help_opt_rgx.match(
@@ -744,7 +744,7 @@ def serve(
     name_group = "|".join(name_list)
     # print(prefixes)
     # print(prefix_rgx_group)
-    opt_rgx = re.compile(rf"({prefix_group})({name_group})")
+    opt_rgx = re.compile(rf"^({prefix_group})({name_group})$")
     # loop through the list once first
     # to detect duplicate instances of the same field
     opt_idx = {}
