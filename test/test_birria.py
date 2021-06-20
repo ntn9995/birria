@@ -70,6 +70,26 @@ def test_cooking_functions():
     assert class_ingredients == instance_ingredients
 
 
+def test_cook_class_empty():
+    @cook
+    class BaseRecipe:
+        a: int
+        b: float
+        d: bool
+
+    with pytest.raises(TypeError):
+
+        @cook
+        class EmptyRecipe:
+            pass
+
+    @cook
+    class DerivedRecipe(BaseRecipe):
+        pass
+
+    assert ingredients(DerivedRecipe) == ingredients(BaseRecipe)
+
+
 @pytest.mark.parametrize(
     "int_val, float_val, str_val, bool_val, int_list, float_list, str_list",
     [
