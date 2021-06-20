@@ -611,6 +611,15 @@ def test_serve_positional(
             "-f 0.0",
             "-g some nice string",
         ),
+        (
+            "-a -100",
+            "-b 0.5",
+            "-c -c",
+            "",
+            "-e -1 -2 -3 -4 -5",
+            "-f 0.0",
+            "-g some nice string",
+        ),
     ],
 )
 def test_serve_named(
