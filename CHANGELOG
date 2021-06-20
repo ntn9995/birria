@@ -1,0 +1,25 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [Unreleased]
+
+### Developing
+
+- Alias for optional arguments 
+
+## [0.0.1] - 2021-06-18
+
+### Added
+
+- Basic features and functionalities
+    - Required and optional arguments with type annotations
+    - List typed arguments
+    - Supported types: `int, float str, bool, list, List, List[str], List[int], List[float]`
+    - '-', '+', '/' as valid prefixes for option string
+    - Supports both snake-cased and dash-separated names as valid option strings
+- Help string printing functionality.
+
+
+[unreleased]: https://github.com/ntn9995/birria/compare/0.0.1...HEAD
+[0.0.1]: https://github.com/ntn9995/birria/releases/tag/0.0.1
