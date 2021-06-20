@@ -1316,3 +1316,12 @@ def test_alias(
         assert served_alias.c == exp_c
         assert served_alias.d == exp_d
         assert served_norm == served_alias
+
+    # if alias is the same name as the ingredient name
+    # should rase ValueError on serve()
+    @cook
+    class WrongRecipe:
+        hello: str = ingredient(alias="hello", default=None)
+
+    with pytest.raises(ValueError):
+        serve(WrongRecipe, raw_ingredients=["world"])

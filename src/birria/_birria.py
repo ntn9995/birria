@@ -763,7 +763,9 @@ def serve(
             name_list.append(dash_name)
             opt_ingredients_aliases[dash_name] = n
         alias = opt_ingredients[n].alias
-        if alias is not None:
+        if alias:
+            if alias == n:
+                raise ValueError(f"Alias {alias} is the same as ingredient name")
             opt_ingredients_aliases[alias] = n
             name_list.append(alias)
 
