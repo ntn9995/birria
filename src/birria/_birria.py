@@ -388,6 +388,9 @@ def _proc_class(cls: Type[UserClass]) -> Type[UserClass]:
         if isinstance(val, Ingredient) and name not in cls_annotations:
             raise TypeError(f"{name!r} is a field but has no type annotations")
 
+    if not fields:
+        raise TypeError("No ingredients found in class or any base classes")
+
     # set all the fields to __arg_fields__
     # and mark this class as a cooked class
     # pprint(fields)
