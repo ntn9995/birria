@@ -822,6 +822,8 @@ def test_serve_list_default(default: Any, more: AllowedList, itype: Type[Allowed
     served_w_no_seasoning = serve(CookedClass, raw_ingredients=[])
     assert served_w_no_seasoning.shopping_list == default
 
+    assert_exit(1, serve, CookedClass, ["-shopping_list"])
+
     args = ["-shopping_list"] + more
     cast_inner = CAST_LOOKUP[itype]
     wrong_type = False
@@ -899,6 +901,10 @@ def test_serve_list_mixed():
     assert served_w_no_seasoning.b is None
     assert served_w_no_seasoning.c == []
     assert served_w_no_seasoning.d == [1.0, 2.0, 3.0]
+
+    assert_exit(1, serve, CookedClass, exp_a + ["-b"])
+    assert_exit(1, serve, CookedClass, exp_a + ["-c"])
+    assert_exit(1, serve, CookedClass, exp_a + ["-d"])
 
     b_vals = ["-b", "1", "2", "3"]
     exp_b = [int(i) for i in b_vals[1:]]
