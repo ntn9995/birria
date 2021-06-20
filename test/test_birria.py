@@ -12,6 +12,7 @@ from birria import (
     is_cooked_instance,
     is_cooked_class,
     serve,
+    _match_opt_strings,
 )
 
 
@@ -1142,18 +1143,156 @@ def test_help(prefixes: List[str], capsys: CaptureFixture[str]):
         assert served.f == [s, "more", "strings"]
 
 
-@pytest.mark.parametrize("prefixes", [("-", "+", "/")])
-def test_alias(prefixes: List[str]):
+@pytest.mark.parametrize(
+    "prefixes, names, expected, raw_names",
+    [
+        (["-", "+", "/"], ["b"], [(1, "b")], ["blah", "b", "+bloh", "bbb", "+-b"]),
+        (
+            ["-"],
+            ["blah", "b"],
+            [(0, "blah"), (3, "b")],
+            ["blah", "+b", "-b", "b", "+-b", "bob"],
+        ),
+    ],
+)
+def test_match_opt_string_all_permumations(
+    prefixes: List[str],
+    names: List[str],
+    expected: List[Tuple[int, str]],
+    raw_names: List[str],
+):
+    # test for permutations of option strings (prefixes * opt names)
+    # prefixes -> list of possible prefix
+    # names -> names to match against
+    # expected -> list of expected index, name tuples that the function yields
+    # raw_names -> list of strings, including the names to match against,
+    #               iterate through all the permuations of prefixes ordering
+    #               and combine them with the strings to generate a list
+    #               of argument to be passed to _match_opt_strings().
+    #               assert that at each iteration, the yielded tuple
+    #               is the expected one.
+
+    for prefix_combo in itertools.product(prefixes, repeat=len(raw_names)):
+        arg_strs = []
+        for i, p in enumerate(prefix_combo):
+            name = raw_names[i]
+            opt_str = f"{p}{name}"
+            arg_strs.append(opt_str)
+
+        print(arg_strs)
+        idx_name_tuples = [
+            (i, name) for i, name in _match_opt_strings(names, prefixes, arg_strs)
+        ]
+        assert idx_name_tuples == expected
+
+
+@pytest.mark.parametrize(
+    "prefixes, names, expected, args_in",
+    [
+        (
+            ["-"],
+            ["b", "bleh"],
+            [(1, "b"), (4, "bleh")],
+            ["b", "-b", "+b", "/b", "-bleh", "bleh", "+bleh", "/bleh"],
+        ),
+        (
+            ["+"],
+            ["b", "bleh"],
+            [(2, "b"), (6, "bleh")],
+            ["b", "-b", "+b", "/b", "-bleh", "bleh", "+bleh", "/bleh"],
+        ),
+        (
+            ["/"],
+            ["b", "bleh"],
+            [(3, "b"), (7, "bleh")],
+            ["b", "-b", "+b", "/b", "-bleh", "bleh", "+bleh", "/bleh"],
+        ),
+        (
+            ["-", "+", "/"],
+            ["b", "bleh"],
+            [(1, "b"), (2, "b"), (3, "b"), (7, "bleh"), (9, "bleh"), (10, "bleh")],
+            [
+                "b",
+                "-b",
+                "+b",
+                "/b",
+                "-bbb",
+                "+bbb",
+                "/bbb",
+                "-bleh",
+                "bleh",
+                "+bleh",
+                "/bleh",
+                "-blehelo",
+                "+blehelo",
+                "/blehelo",
+            ],
+        ),
+    ],
+)
+def test_match_opt_strings(
+    prefixes: List[str],
+    names: List[str],
+    expected: List[Tuple[int, str]],
+    args_in: List[str],
+):
+    idx_name_tuples = [t for t in _match_opt_strings(names, prefixes, args_in)]
+    assert idx_name_tuples == expected
+
+
+@pytest.mark.parametrize(
+    "prefix, alias_a, alias_b, alias_c, alias_d, exp_a, exp_b, exp_c, exp_d",
+    [
+        ("-", "all", "bleh", "cringe", "dude", 10, 3.142, "crack", True),
+        ("+", "all", "bleh", "cringe", "dude", 10, 3.142, "crack", True),
+        ("/", "all", "bleh", "cringe", "dude", 10, 3.142, "crack", True),
+    ],
+)
+def test_alias(
+    prefix: str,
+    alias_a: str,
+    alias_b: str,
+    alias_c: str,
+    alias_d: str,
+    exp_a: int,
+    exp_b: float,
+    exp_c: str,
+    exp_d: bool,
+):
     @cook
     class Recipe:
-        a: int
-        b: bool = ingredient(alias="blah")
+        a: int = ingredient(alias=alias_a, default=None)
+        b: float = ingredient(alias=alias_b, default=None)
+        c: str = ingredient(alias=alias_c, default=None)
+        d: bool = ingredient(alias=alias_d)
 
-    exp_a = 1
-    served = serve(Recipe, raw_ingredients=[str(exp_a), "-b"], prefixes=prefixes)
-    assert served.a == exp_a
-    assert served.b
+    normal_args = [
+        f"{prefix}a {exp_a}",
+        f"{prefix}b {exp_b}",
+        f"{prefix}c {exp_c}",
+        f"{prefix}d",
+    ]
+    alias_args = [
+        f"{prefix}{alias_a} {exp_a}",
+        f"{prefix}{alias_b} {exp_b}",
+        f"{prefix}{alias_c} {exp_c}",
+        f"{prefix}{alias_d}",
+    ]
 
-    served = serve(Recipe, raw_ingredients=[str(exp_a), "-blah"], prefixes=prefixes)
-    assert served.a == exp_a
-    assert served.b
+    served_norm = serve(
+        Recipe, raw_ingredients=" ".join(normal_args).split(), prefixes=[prefix]
+    )
+    assert served_norm.a == exp_a
+    assert served_norm.b == exp_b
+    assert served_norm.c == exp_c
+    assert served_norm.d == exp_d
+
+    for perm in itertools.permutations(alias_args):
+        served_alias = serve(
+            Recipe, raw_ingredients=" ".join(perm).split(), prefixes=[prefix]
+        )
+        assert served_alias.a == exp_a
+        assert served_alias.b == exp_b
+        assert served_alias.c == exp_c
+        assert served_alias.d == exp_d
+        assert served_norm == served_alias
