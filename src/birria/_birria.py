@@ -741,7 +741,7 @@ def serve(
         sys.exit(0)
 
     # just some sanity checks
-    if num_req and not preprepped_ingredients:
+    if num_req and not num_raw_ingredients:
         _print_err_and_exit(f"No arguments! Need at least {num_req}")
 
     if not seen_req_list and num_raw_ingredients < num_req:
@@ -752,6 +752,9 @@ def serve(
             "Only one non-default field allowed if using list type,"
             "Use a default field if you want to specify more list fields"
         )
+
+    if not num_raw_ingredients:
+        return recipe(**cooking)  # type: ignore[call-arg]
 
     # if the first argument is a named argument,
     # all the postional arguments will follow the last
@@ -774,33 +777,82 @@ def serve(
             name_list.append(alias)
 
     name_group = "|".join(name_list)
-    # print(prefixes)
-    # print(prefix_rgx_group)
     opt_rgx = re.compile(rf"^({prefix_group})({name_group})$")
-    # loop through the list once first
-    # to detect duplicate instances of the same field
-    opt_idx = {}
+    parsed_opts = set()
+    first_opt_idx = -1
+    last_opt_idx = num_raw_ingredients
+
+    opt_first = bool(opt_rgx.match(preprepped_ingredients[0]))
+    if opt_first:
+        # non-default field is a list, all named arguments
+        # must be at the end of the list
+        if seen_req_list:
+            _print_err_and_exit(
+                "When using list type for non-default field"
+                "All default arguments must be specified after the non-default argument"
+            )
+
+        first_opt_idx = 0
+        last_opt_idx -= num_req
 
     if opt_ingredients:
         cur = 0
         while cur < num_raw_ingredients:
             arg = preprepped_ingredients[cur]
             match = opt_rgx.match(arg)
-            if match is not None:
-                name = match.groups()[1]
-                if name not in opt_ingredients:
-                    name = opt_ingredients_aliases[name]
-                if name in opt_idx:
-                    _print_err_and_exit(f"Duplicate instance of {name}")
-                opt_idx[name] = cur
-                if opt_ingredients[name].type != bool:
-                    cur += 2
-                else:
-                    cur += 1
-            else:
+            if not match:
                 cur += 1
+                continue
 
-    if not opt_ingredients or not opt_idx:
+            name = match.groups()[1]
+            if first_opt_idx == -1:
+                first_opt_idx = cur
+            if name not in opt_ingredients:
+                name = opt_ingredients_aliases[name]
+            if name in parsed_opts:
+                _print_err_and_exit(f"Duplicate instance of {name}")
+            parsed_opts.add(name)
+
+            ingredient = opt_ingredients[name]
+            itype = ingredient.type
+            if itype not in _SUPPORTED_LIST_TYPES:
+                if itype == bool:
+                    cooking[name] = not cooking[name]
+                    cur += 1
+                    continue
+                else:
+                    try:
+                        cooking[name] = itype(preprepped_ingredients[cur + 1])
+                    except ValueError:
+                        _print_err_and_exit(f"Wrong type for {name}, needs {itype}")
+                    cur += 2
+                    continue
+            else:
+                vals = []
+                cast = _LIST_CASTS[itype]
+                for item in preprepped_ingredients[cur + 1 : last_opt_idx]:
+                    if opt_rgx.match(item):
+                        break
+                    try:
+                        vals.append(cast(item))
+                    except ValueError:
+                        _print_err_and_exit(
+                            f"value {item} for {name} has the wrong type, needs {cast}"
+                        )
+                if vals:
+                    if ingredient.default_factory is not MISSING:
+                        def_list = ingredient.default_factory()
+                        if isinstance(def_list, list):
+                            cooking[name] = def_list + vals
+                        else:
+                            cooking[name] = vals
+                    else:
+                        cooking[name] = vals
+                else:
+                    _print_err_and_exit(f"Needs at least one value for {name}")
+                cur += len(vals) + 1
+
+    if not opt_ingredients or not parsed_opts:
         # no named arguments (either from the class definition or from the list),
         # just parse the list for positional argument
         if not seen_req_list:
@@ -835,34 +887,7 @@ def serve(
 
     # if the first named arg appears first in the argument list,
     # all the positional arguments are at the end of the list,
-    # otherwise they are at the start of the list. In either cases,
-    # we parse the positional arguments first, then the remaining
-    # list contains all the named arguments. This avoids cases with
-    # list named arguments like:
-    # prog -list n1 n2 n3 | p1 p2 p3
-    #      named list     | pos args
-    # In this case, if we parse the named arguments first, we can't
-    # the parser thinks that p1 p2 p3 items in "list". This is not
-    # a problem if we parse the positional arguments first.
-
-    opt_first = min(opt_idx.values()) == 0
-
-    last_opt_idx: int = num_raw_ingredients
-    if opt_first:
-        # non-default field is a list, all named arguments
-        # must be at the end of the list
-        if seen_req_list:
-            _print_err_and_exit(
-                "When using list type for non-default field"
-                "All default arguments must be specified after the non-default argument"
-            )
-
-        # if the first argument is named, named arguments
-        # go on until the first positional argument,
-        # which is the number of positional arguments from
-        # the end of the list
-        if num_req:
-            last_opt_idx = -num_req
+    # otherwise they are at the start of the list.
 
     if num_req:
         pos_args_slice: List[str]
@@ -880,8 +905,6 @@ def serve(
 
         if not seen_req_list:
             for i, arg in enumerate(pos_args_slice):
-                if opt_rgx.match(arg):
-                    _print_err_and_exit("Named and positional argument cannot mix")
                 try:
                     ingredient = req_ingredients[i]
                     cooking[ingredient.name] = ingredient.type(arg)
@@ -896,10 +919,8 @@ def serve(
             ingredient = req_ingredients[0]
             cast = _LIST_CASTS[ingredient.type]
             try:
-                for arg in preprepped_ingredients:
+                for arg in preprepped_ingredients[:first_opt_idx]:
                     # gather items into a list until we find an option string
-                    if opt_rgx.match(arg):
-                        break
                     vals.append(cast(arg))
                 if not vals:
                     _print_err_and_exit(
@@ -910,39 +931,5 @@ def serve(
                     f"Value {arg} for {ingredient.name} of the wrong type, needs {cast}"
                 )
             cooking[ingredient.name] = vals
-
-    for name, idx in opt_idx.items():
-        ingredient = opt_ingredients[name]
-        arg_type = ingredient.type
-        if arg_type not in _SUPPORTED_LIST_TYPES:
-            if arg_type == bool:
-                # reverse the previously set value
-                cooking[name] = not cooking[name]
-            else:
-                try:
-                    cooking[name] = arg_type(preprepped_ingredients[idx + 1])
-                except ValueError:
-                    _print_err_and_exit(f"Wrong type for {name}, needs {arg_type}")
-        else:
-            vals = []
-            cast = _LIST_CASTS[arg_type]
-            for arg in preprepped_ingredients[idx + 1 : last_opt_idx]:
-                if opt_rgx.match(arg):
-                    break
-                try:
-                    vals.append(cast(arg))
-                except ValueError:
-                    _print_err_and_exit(
-                        f"value {arg} for {name} has the wrong type, needs {cast}"
-                    )
-                if vals:
-                    if ingredient.default_factory is not MISSING:
-                        def_list = ingredient.default_factory()
-                        if isinstance(def_list, list):
-                            cooking[name] = def_list + vals
-                        else:
-                            cooking[name] = vals
-                    else:
-                        cooking[name] = vals
 
     return recipe(**cooking)  # type: ignore[call-arg]
