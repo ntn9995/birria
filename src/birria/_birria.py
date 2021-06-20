@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     Type,
     IO,
+    Iterator,
     Dict,
     Mapping,
     Union,
@@ -588,6 +589,27 @@ def _print_help(
     if opt_help_strs:
         file.write(f"Optional\n{sep}\n")
         file.write("\n".join(opt_help_strs) + "\n")
+
+
+def _match_opt_strings(
+    names: List[str], prefixes: List[str], args_in: List[str]
+) -> Iterator[Tuple[int, str]]:
+    # iterates through a list of arguments
+    # and yields the index and the option string (excluding the prefix)
+    # whenever there's a match
+
+    name_group = r"|".join(names) if len(names) > 1 else names[0]
+    prefix_group = (
+        r"|".join(_ALLOWED_PREFIXES[p] for p in prefixes)
+        if len(prefixes) > 1
+        else _ALLOWED_PREFIXES[prefixes[0]]
+    )
+    opt_rgx = re.compile(rf"^({prefix_group})({name_group})$")
+
+    for i, arg in enumerate(args_in):
+        match = opt_rgx.match(arg)
+        if match is not None:
+            yield (i, match.groups()[1])
 
 
 def serve(
