@@ -543,6 +543,10 @@ def _print_help(
     if prefixes:
         for ingredient in optional:
             name = ", ".join(f"{p}{ingredient.name}" for p in prefixes)
+            if ingredient.alias:
+                alias = ", ".join(f"{p}{ingredient.alias}" for p in prefixes)
+                name += f", {alias}"
+
             type_str = _TYPE_STR[ingredient.type]
             help_msg = (
                 "" if not ingredient.help else space_rgx.sub(" ", ingredient.help)
