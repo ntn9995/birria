@@ -95,25 +95,21 @@ _PARAMS = "__arg_params__"
 
 
 class Ingredient:
-    __slots__ = (
-        "name",
-        "type",
-        "default",
-        "default_factory",
-        "help",
-    )
+    __slots__ = ("name", "type", "default", "default_factory", "help", "alias")
 
     def __init__(
         self,
         default: Any,
         default_factory: Callable[[], Any],
         help: Optional[str],
+        alias: Optional[str],
     ):
         self.name: str = None  # type: ignore[assignment]
         self.type: type = None  # type: ignore[assignment]
         self.default = default
         self.default_factory = default_factory
         self.help = help
+        self.alias = alias
 
     def __repr__(self) -> str:
         return (
@@ -123,6 +119,7 @@ class Ingredient:
             f"default={self.default!r},"
             f"default_factory={self.default_factory!r},"
             f"help={self.help!r}"
+            f"alias={self.alias!r}"
             ")"
         )
 
@@ -142,11 +139,11 @@ class Ingredient:
 
 
 def ingredient(
-    *, default=MISSING, default_factory=MISSING, help: str = None
+    *, default=MISSING, default_factory=MISSING, help: str = None, alias: str = None
 ) -> Ingredient:
     if default is not MISSING and default_factory is not MISSING:
         raise ValueError("can't specify both default and default factory")
-    return Ingredient(default, default_factory, help)
+    return Ingredient(default, default_factory, help, alias)
 
 
 def _create_fn(
@@ -726,10 +723,10 @@ def serve(
     help_opt_group = r"|".join(_HELP_OPT)
     help_opt_rgx = re.compile(rf"^({prefix_group})({help_opt_group})$")
 
+    num_raw_ingredients = len(preprepped_ingredients)
+
     # print help if the help option string is the only argument
-    if len(preprepped_ingredients) == 1 and help_opt_rgx.match(
-        preprepped_ingredients[0]
-    ):
+    if num_raw_ingredients == 1 and help_opt_rgx.match(preprepped_ingredients[0]):
         _print_help(
             sys.stderr,
             req_ingredients,
@@ -743,7 +740,7 @@ def serve(
     if num_req and not preprepped_ingredients:
         _print_err_and_exit(f"No arguments! Need at least {num_req}")
 
-    if not seen_req_list and len(preprepped_ingredients) < num_req:
+    if not seen_req_list and num_raw_ingredients < num_req:
         _print_err_and_exit(f"Too few arguments! Need at least {num_req}")
 
     if num_req > 1 and seen_req_list:
@@ -758,7 +755,6 @@ def serve(
     # is a positional argument, all the named arguments
     # follow the last positional argument.
     # Force this convention to make our life easier
-
     name_list = []
     for n in opt_ingredients.keys():
         name_list.append(n)
@@ -766,6 +762,11 @@ def serve(
             dash_name = "-".join(n.split("_"))
             name_list.append(dash_name)
             opt_ingredients_aliases[dash_name] = n
+        alias = opt_ingredients[n].alias
+        if alias is not None:
+            opt_ingredients_aliases[alias] = n
+            name_list.append(alias)
+
     name_group = "|".join(name_list)
     # print(prefixes)
     # print(prefix_rgx_group)
@@ -775,15 +776,23 @@ def serve(
     opt_idx = {}
 
     if opt_ingredients:
-        for i, arg in enumerate(preprepped_ingredients):
+        cur = 0
+        while cur < num_raw_ingredients:
+            arg = preprepped_ingredients[cur]
             match = opt_rgx.match(arg)
             if match is not None:
                 name = match.groups()[1]
                 if name not in opt_ingredients:
                     name = opt_ingredients_aliases[name]
                 if name in opt_idx:
-                    _print_err_and_exit(f"Duplicate instances of {name}")
-                opt_idx[name] = i
+                    _print_err_and_exit(f"Duplicate instance of {name}")
+                opt_idx[name] = cur
+                if opt_ingredients[name].type != bool:
+                    cur += 2
+                else:
+                    cur += 1
+            else:
+                cur += 1
 
     if not opt_ingredients or not opt_idx:
         # no named arguments (either from the class definition or from the list),
@@ -832,7 +841,7 @@ def serve(
 
     opt_first = min(opt_idx.values()) == 0
 
-    last_opt_idx: int = len(preprepped_ingredients)
+    last_opt_idx: int = num_raw_ingredients
     if opt_first:
         # non-default field is a list, all named arguments
         # must be at the end of the list
