@@ -6,7 +6,17 @@ All notable changes to this project will be documented in this file.
 
 ### Developing
 
+- Smarter duplicate matching
+- Better help string formatting
+
+## [0.1.2] - 2021-06-20
+### Added
+
 - Alias for optional arguments 
+    - Help string also prints out aliases
+
+### Bugfix
+- Correctly match option string, only match for whole string now.
 
 ## [0.0.1] - 2021-06-18
 
@@ -21,5 +31,11 @@ All notable changes to this project will be documented in this file.
 - Help string printing functionality.
 
 
-[unreleased]: https://github.com/ntn9995/birria/compare/0.0.1...HEAD
+### Bugs
+- Option string matching is bad due to misconstructed regex
+    - Accepts any matches (even a substring) instead of a whole string
+    - "-b", "-bleh", "a-b" both counts as the same option string ("-b" is a
+    substring in all of these cases)
+
+[unreleased]: https://github.com/ntn9995/birria/compare/0.0.3...HEAD
 [0.0.1]: https://github.com/ntn9995/birria/releases/tag/0.0.1
