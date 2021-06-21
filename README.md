@@ -8,6 +8,13 @@ the arguments. For more information about type annotations:
 
 ## Quickstart
 
+Install using pip:
+```bash
+pip install birria
+```
+
+In your source code.
+
 ```python
 from birria import cook, serve
 
