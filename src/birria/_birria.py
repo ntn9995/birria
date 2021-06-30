@@ -505,6 +505,8 @@ def _help_str(
 
 def _print_help(
     file: IO,
+    prog: str,
+    description: Optional[str],
     required: Iterable[Ingredient],
     optional: Iterable[Ingredient],
     width: int = None,
@@ -585,6 +587,12 @@ def _print_help(
                 )
 
     sep = "-" * width
+    if description:
+        prog = f"{prog}: {description}"
+
+    prog = "\n".join(_str_to_lines(prog, width))
+
+    file.write(f"\n{prog}\n{sep}\n")
 
     if req_help_strs:
         file.write(f"Required\n{sep}\n")
@@ -618,6 +626,7 @@ def _match_opt_strings(
 
 def serve(
     recipe: Type[CookedBirria],
+    description: str = None,
     raw_ingredients: List[str] = None,
     prefixes: List[str] = None,
     extra_prefixes: List[str] = None,
@@ -631,8 +640,10 @@ def serve(
     if raw_ingredients is None:
         # exclude the first argument (the program invocation)
         preprepped_ingredients = sys.argv[1:]
+        prog = sys.argv[0]
     else:
         preprepped_ingredients = raw_ingredients[:]
+        prog = "prog"
 
     opt_ingredients: Dict[str, Ingredient] = {}
     # map aliasses to real ingredient names
@@ -733,6 +744,8 @@ def serve(
     if num_raw_ingredients == 1 and help_opt_rgx.match(preprepped_ingredients[0]):
         _print_help(
             sys.stderr,
+            prog,
+            description,
             req_ingredients,
             opt_ingredients.values(),
             max_width=40,
