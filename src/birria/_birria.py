@@ -626,10 +626,10 @@ def _match_opt_strings(
 
 def serve(
     recipe: Type[CookedBirria],
-    description: str = None,
     raw_ingredients: List[str] = None,
     prefixes: List[str] = None,
     extra_prefixes: List[str] = None,
+    description: str = None,
 ) -> CookedBirria:
     if not is_cooked(recipe):
         raise ValueError(
