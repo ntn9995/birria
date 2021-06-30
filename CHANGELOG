@@ -4,10 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Description printing
+
 ### Developing
 
-- Smarter duplicate matching
-- Better help string formatting
+- new type: bytes
+- Smarter duplicate matching ? 
+- Better help string formatting ?
 
 ## [0.1.2] - 2021-06-20
 ### Added
