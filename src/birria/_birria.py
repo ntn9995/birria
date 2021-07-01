@@ -1,5 +1,6 @@
 import builtins
 from itertools import chain
+from pathlib import PurePath
 import re
 from shutil import get_terminal_size
 import sys
@@ -689,7 +690,7 @@ def serve(
     if raw_ingredients is None:
         # exclude the first argument (the program invocation)
         preprepped_ingredients = sys.argv[1:]
-        prog = sys.argv[0]
+        prog = PurePath(sys.argv[0]).name
     else:
         preprepped_ingredients = raw_ingredients[:]
         prog = "prog"
