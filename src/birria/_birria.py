@@ -540,9 +540,9 @@ def _print_help(
     description: Optional[str],
     required: Iterable[Ingredient],
     optional: Iterable[Ingredient],
-    width: int = None,
-    max_width: int = None,
-    prefixes: List[str] = None,
+    width: Optional[int],
+    max_width: Optional[int],
+    prefixes: Optional[List[str]],
 ):
 
     if not width:
@@ -661,6 +661,7 @@ def serve(
     prefixes: List[str] = None,
     extra_prefixes: List[str] = None,
     description: str = None,
+    max_width: int = None,
 ) -> CookedBirria:
     """Parses argument from the command line.
 
@@ -677,6 +678,8 @@ def serve(
             characters to the default list.
         description: Optional description of the program. This is printed out
             along with the help strings for individual arguments.
+        max_width: Optional integer. This is the maximum width (in columns)
+            of the program's help message.
 
     Returns:
         Instance of a "cooked" class with parsed values.
@@ -798,8 +801,9 @@ def serve(
             description,
             req_ingredients,
             opt_ingredients.values(),
-            max_width=70,
-            prefixes=prefixes,
+            None,
+            max_width or 70,
+            prefixes,
         )
         sys.exit(0)
 

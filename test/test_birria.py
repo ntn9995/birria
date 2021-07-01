@@ -1154,11 +1154,24 @@ def test_help(prefixes: List[str], capsys: CaptureFixture[str]):
         assert_exit(0, serve, Recipe, [s], prefixes)
         captured = capsys.readouterr().err
         assert captured
+
+        assert_exit(0, serve, Recipe, [s], prefixes, None, None, 40)
+        captured_w_width = capsys.readouterr().err
+        assert captured_w_width
+        assert captured_w_width != captured
+
         assert_exit(0, serve, Recipe, [s], prefixes, None, "test description")
         captured_w_description = capsys.readouterr().err
         assert captured_w_description
         assert captured_w_description != captured
+        assert captured_w_description != captured_w_width
 
+        assert_exit(0, serve, Recipe, [s], prefixes, None, "test description", 40)
+        captured_w_description_and_width = capsys.readouterr().err
+        assert captured_w_description_and_width
+        assert captured_w_description_and_width != captured
+        assert captured_w_description_and_width != captured_w_width
+        assert captured_w_description_and_width != captured_w_description
     # test that parsing behaves normally if an item is the same
     # as the help option string. The parser should just treat
     # that as any other item in the list.
