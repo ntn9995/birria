@@ -23,6 +23,8 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         run: |
           python -m pip install --upgrade pip
+          echo "version from __init__.py"
+          sed -n -r '/__version__ = ".*"/p' src/birria/__init__.py | grep -o '".*"'
           pip install --upgrade setuptools wheel twine build
           python -m build
           twine check dist/*
