@@ -95,6 +95,11 @@ _PARAMS = "__arg_params__"
 
 
 class Ingredient:
+    """Class that represents an ingredient.
+
+    This class is used as a more elaborate declaration of an ingredient/argument.
+    You should probably use ingredient() instead of calling this directly.
+    """
     __slots__ = ("name", "type", "default", "default_factory", "help", "alias")
 
     def __init__(
@@ -141,6 +146,23 @@ class Ingredient:
 def ingredient(
     *, default=MISSING, default_factory=MISSING, help: str = None, alias: str = None
 ) -> Ingredient:
+    """Instantiate and returns an Ingredient.
+
+    This is a factory function to create Ingredient class instance.
+    You probably should use this instead of using Ingredient directly.
+
+    Args:
+        default: Default value for the ingredient
+        default_factory: Callable that takes no parameters and returns
+            a value to be used as the default value.
+        help: Short description of the ingredient that will be printed
+            as part of the help string.
+        alias: Alias for option strings. This is only applicable for
+            optional ingredient.
+
+    Returns:
+        An Ingredient class instance.
+    """
     if default is not MISSING and default_factory is not MISSING:
         raise ValueError("can't specify both default and default factory")
     return Ingredient(default, default_factory, help, alias)
@@ -417,6 +439,14 @@ def _proc_class(cls: Type[UserClass]) -> Type[UserClass]:
 # it's only used to detect if the decorator is called with params
 # or not
 def cook(_cls=None):
+    """Decorator that takes a class and returns a CookedBirria class.
+
+    Takes a class with typed variable annotations and a class based
+    on the input class with __init__, __repr__, __eq__ dunder methods.
+    This constructed class can then be used as a declaration of
+    arguments for serve().
+    """
+
     def wrap(cls):
         return _proc_class(cls)
 
@@ -631,6 +661,25 @@ def serve(
     extra_prefixes: List[str] = None,
     description: str = None,
 ) -> CookedBirria:
+    """Parses argument from the command line.
+
+    Takes a class decorated with the cook decorator as
+    a list of declarations of arguments. Returns the parsed
+    values from command line or argument list in an instance
+    of the "cooked" class.
+
+    Args:
+        recipe: Class decorated with cook().
+        raw_ingredients: Optional list of arguments. Defaults to sys.argv.
+        prefixes: List of prefix characters for option strings. Defaults to ['-'].
+        extra_prefixes: Extra prefixes characters. Useful for adding extra
+            characters to the default list.
+        description: Optional description of the program. This is printed out
+            along with the help strings for individual arguments.
+
+    Returns:
+        Instance of a "cooked" class with parsed values.
+    """
     if not is_cooked(recipe):
         raise ValueError(
             "Argument arg_cls must be either a PyArg class or an instance of an PyArg class"
