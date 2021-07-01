@@ -1151,9 +1151,13 @@ def test_help(prefixes: List[str], capsys: CaptureFixture[str]):
     help_opt_strs = ["".join(s) for s in itertools.product(prefixes, ("h", "help"))]
 
     for s in help_opt_strs:
-        assert_exit(0, serve, Recipe, ["-h"])
+        assert_exit(0, serve, Recipe, [s], prefixes)
         captured = capsys.readouterr().err
         assert captured
+        assert_exit(0, serve, Recipe, [s], prefixes, None, "test description")
+        captured_w_description = capsys.readouterr().err
+        assert captured_w_description
+        assert captured_w_description != captured
 
     # test that parsing behaves normally if an item is the same
     # as the help option string. The parser should just treat
