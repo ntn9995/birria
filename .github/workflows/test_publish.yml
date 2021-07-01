@@ -20,7 +20,7 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-          VERSION: sed -n -r '/__version__ = ".*"/p' src/birria/__init__.py | grep -o '".*"'
+          VERSION: ${{ sed -n -r '/__version__ = ".*"/p' src/birria/__init__.py | grep -o '".*"' }}
         run: |
           echo "publishing birria from ref: $GITHUB_REF"
           echo "version: $VERSION"
