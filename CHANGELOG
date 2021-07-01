@@ -46,6 +46,6 @@ All notable changes to this project will be documented in this file.
     - "-b", "-bleh", "a-b" both counts as the same option string ("-b" is a
     substring in all of these cases)
 
-[unreleased]: https://github.com/ntn9995/birria/compare/0.0.3...HEAD
+[unreleased]: https://github.com/ntn9995/birria/compare/0.0.2...v0.1.0
 [0.0.2]: https://github.com/ntn9995/birria/releases/tag/0.0.2
 [0.0.1]: https://github.com/ntn9995/birria/releases/tag/0.0.1
