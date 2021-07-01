@@ -798,7 +798,7 @@ def serve(
             description,
             req_ingredients,
             opt_ingredients.values(),
-            max_width=40,
+            max_width=70,
             prefixes=prefixes,
         )
         sys.exit(0)
