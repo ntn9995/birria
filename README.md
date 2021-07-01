@@ -253,8 +253,6 @@ arguments on the cli. However, ordering of the optional argument can be arbitrar
 
 Note that `list` and `List` will be treated as `List[str]`.
 
-More scalar types like `byte` will likely be added
-
 ### Prefixes
 
 By default, `birria` only accepts `-` as the prefix for option strings, other supported
