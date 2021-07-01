@@ -4,15 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Developing
+
+- Smarter duplicate matching ? 
+- Better help string formatting ?
+
+## [0.1.0] - 2021-06-30
+
 ### Added
 
 - Description printing
-
-### Developing
+    - serve() accepts "description" as an optional string parameter.
+    - help printing outputs the program name and the description as the first line.
 
 ## [0.0.2] - 2021-06-20
 
-## [0.1.2] - 2021-06-20
 ### Added
 
 - Alias for optional arguments 
@@ -41,4 +47,5 @@ All notable changes to this project will be documented in this file.
     substring in all of these cases)
 
 [unreleased]: https://github.com/ntn9995/birria/compare/0.0.3...HEAD
+[0.0.2]: https://github.com/ntn9995/birria/releases/tag/0.0.2
 [0.0.1]: https://github.com/ntn9995/birria/releases/tag/0.0.1
