@@ -12,7 +12,6 @@ jobs:
         with:
           ref: ${{ github.ref }}
       - name: Setup python
-      - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
