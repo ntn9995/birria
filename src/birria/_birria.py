@@ -624,14 +624,14 @@ def _print_help(
 
     prog = "\n".join(_str_to_lines(prog, width))
 
-    file.write(f"\n{prog}\n{sep}\n")
+    file.write(f"\n{prog}\n")
 
     if req_help_strs:
-        file.write(f"Required\n{sep}\n")
+        file.write(f"\nRequired\n{sep}\n")
         file.write("\n".join(req_help_strs) + "\n")
 
     if opt_help_strs:
-        file.write(f"Optional\n{sep}\n")
+        file.write(f"\nOptional\n{sep}\n")
         file.write("\n".join(opt_help_strs) + "\n")
 
 
