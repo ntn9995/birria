@@ -552,7 +552,6 @@ def _print_help(
         if max_width:
             width = min(max_width, width)
 
-    print(width)
     space_rgx = re.compile(r"\s+")
     max_padding = width // 2
 

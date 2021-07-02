@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 
 - Smarter duplicate matching ? 
 
+### [0.2.1] - 2021-07-02
+
+### Bugfix
+- Remove leftover debug print
+
 ## [0.2.0] - 2021-07-02
 
 ### Added
@@ -15,6 +20,9 @@ All notable changes to this project will be documented in this file.
 - Better help string formatting 
     - Better default help string width
     - Let end users specify width of help string through serve()
+
+### Bugs
+- Some leftover debug printing
 
 ## [0.1.1] - 2021-07-01
 
