@@ -546,11 +546,14 @@ def _print_help(
     prefixes: Optional[List[str]],
 ):
 
+    term_width = get_terminal_size().columns
     if not width:
-        cols = get_terminal_size().columns
-        width = cols - 2 if cols <= 90 else 60
+        width = term_width - 2 if term_width <= 90 else 60
         if max_width:
             width = min(max_width, width)
+
+    if width >= term_width:
+        width = term_width - 2
 
     space_rgx = re.compile(r"\s+")
     max_padding = width // 2
