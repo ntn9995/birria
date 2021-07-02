@@ -7,7 +7,8 @@ All notable changes to this project will be documented in this file.
 ### Developing
 
 - Smarter duplicate matching ? 
-- Better help string formatting ?
+- Better help string formatting 
+    - Let end users specify width of help string through serve()
 
 ## [0.1.1] - 2021-07-01
 
