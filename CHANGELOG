@@ -8,6 +8,12 @@ All notable changes to this project will be documented in this file.
 
 - Smarter duplicate matching ? 
 
+### [0.2.2] - 2021-07-02
+
+### Added/Bugfix
+- Better visual separation between sections of the help message
+    - Description, Required, and Optional sectiosn are newline separated
+
 ### [0.2.1] - 2021-07-02
 
 ### Bugfix
@@ -70,7 +76,8 @@ All notable changes to this project will be documented in this file.
     - "-b", "-bleh", "a-b" both counts as the same option string ("-b" is a
     substring in all of these cases)
 
-[unreleased]: https://github.com/ntn9995/birria/compare/0.2.1...master
+[unreleased]: https://github.com/ntn9995/birria/compare/0.2.2...master
+[0.2.2]: https://github.com/ntn9995/birria/releases/tag/0.2.2
 [0.2.1]: https://github.com/ntn9995/birria/releases/tag/0.2.1
 [0.2.0]: https://github.com/ntn9995/birria/releases/tag/0.2.0
 [0.1.1]: https://github.com/ntn9995/birria/releases/tag/0.1.1
