@@ -101,6 +101,7 @@ class Ingredient:
     This class is used as a more elaborate declaration of an ingredient/argument.
     You should probably use ingredient() instead of calling this directly.
     """
+
     __slots__ = ("name", "type", "default", "default_factory", "help", "alias")
 
     def __init__(
@@ -546,11 +547,12 @@ def _print_help(
 ):
 
     if not width:
-        width = get_terminal_size().columns
-        width -= 2
+        cols = get_terminal_size().columns
+        width = cols - 2 if cols <= 90 else 60
+        if max_width:
+            width = min(max_width, width)
 
-    if max_width:
-        width = min(max_width, width)
+    print(width)
     space_rgx = re.compile(r"\s+")
     max_padding = width // 2
 
@@ -661,6 +663,7 @@ def serve(
     prefixes: List[str] = None,
     extra_prefixes: List[str] = None,
     description: str = None,
+    width: int = None,
     max_width: int = None,
 ) -> CookedBirria:
     """Parses argument from the command line.
@@ -678,8 +681,12 @@ def serve(
             characters to the default list.
         description: Optional description of the program. This is printed out
             along with the help strings for individual arguments.
+        width: Optional integer. This is the width of the help message. If not
+            provided, the width will be set to a value based on the current terminal size.
         max_width: Optional integer. This is the maximum width (in columns)
-            of the program's help message.
+            of the program's help message, useful if you don't want to specify a width
+            but want to set a boundary for the message. This has no effect
+            if width is set.
 
     Returns:
         Instance of a "cooked" class with parsed values.
@@ -801,8 +808,8 @@ def serve(
             description,
             req_ingredients,
             opt_ingredients.values(),
-            None,
-            max_width or 70,
+            width,
+            max_width,
             prefixes,
         )
         sys.exit(0)
