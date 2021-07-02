@@ -1155,10 +1155,18 @@ def test_help(prefixes: List[str], capsys: CaptureFixture[str]):
         captured = capsys.readouterr().err
         assert captured
 
+        # help strings should differ when serve called with optional
+        # params (description, width, max_witdh), but if both width
+        # and max_width is provided, the resulting help string should be
+        # the same.
+
         assert_exit(0, serve, Recipe, [s], prefixes, None, None, 40)
         captured_w_width = capsys.readouterr().err
         assert captured_w_width
         assert captured_w_width != captured
+        assert_exit(0, serve, Recipe, [s], prefixes, None, None, 40, 30)
+        captured_w_width_and_max_width = capsys.readouterr().err
+        assert captured_w_width == captured_w_width_and_max_width
 
         assert_exit(0, serve, Recipe, [s], prefixes, None, "test description")
         captured_w_description = capsys.readouterr().err
@@ -1172,6 +1180,13 @@ def test_help(prefixes: List[str], capsys: CaptureFixture[str]):
         assert captured_w_description_and_width != captured
         assert captured_w_description_and_width != captured_w_width
         assert captured_w_description_and_width != captured_w_description
+        assert_exit(0, serve, Recipe, [s], prefixes, None, "test description", 40, 30)
+        captured_w_description_and_width_and_max_width = capsys.readouterr().err
+        assert (
+            captured_w_description_and_width
+            == captured_w_description_and_width_and_max_width
+        )
+
     # test that parsing behaves normally if an item is the same
     # as the help option string. The parser should just treat
     # that as any other item in the list.
