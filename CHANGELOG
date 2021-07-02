@@ -6,26 +6,36 @@ All notable changes to this project will be documented in this file.
 
 ### Developing
 
-- Smarter duplicate matching ? 
+- Smarter duplicate matching ?
+
+### [0.2.3] - 2021-07-02
+
+### Added/Enhancement
+
+- Help message width fitting to terminal size for small terminals.
+    - Previously, if users provide a width larger than the terminal's width,
+    the help message would "trail" off the screen and looks ugly.
+    - New behaviour fits the help message to the screen, overriding the provided
+    width if it is larger than the terminal's width.
 
 ### [0.2.2] - 2021-07-02
 
 ### Added/Bugfix
-- Better visual separation between sections of the help message
-    - Description, Required, and Optional sectiosn are newline separated
+- Better visual separation between sections of the help message.
+    - Description, Required, and Optional sectiosn are newline separated.
 
 ### [0.2.1] - 2021-07-02
 
 ### Bugfix
-- Remove leftover debug print
+- Remove leftover debug print.
 
 ## [0.2.0] - 2021-07-02
 
 ### Added
 
-- Better help string formatting 
-    - Better default help string width
-    - Let end users specify width of help string through serve()
+- Better help string formatting.
+    - Better default help string width.
+    - Let end users specify width of help string through serve().
 
 ### Bugs
 - Some leftover debug printing
@@ -33,7 +43,7 @@ All notable changes to this project will be documented in this file.
 ## [0.1.1] - 2021-07-01
 
 ### Bugfix
-- Description string uses the program name instead of the full path (for console scripts)
+- Description string uses the program name instead of the full path (for console scripts).
 
 ## [0.1.0] - 2021-06-30
 
@@ -44,15 +54,15 @@ All notable changes to this project will be documented in this file.
     - help printing outputs the program name and the description as the first line.
 
 ### Bugs
-- Description string includes the full path of the program if using console scripts
-    - Intended behaviour is just to use the program name
+- Description string includes the full path of the program if using console scripts.
+    - Intended behaviour is just to use the program name.
 
 ## [0.0.2] - 2021-06-20
 
 ### Added
 
-- Alias for optional arguments 
-    - Help string also prints out aliases
+- Alias for optional arguments.
+    - Help string also prints out aliases.
 
 ### Bugfix
 - Correctly match option string, only match for whole string now.
@@ -61,12 +71,12 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Basic features and functionalities
-    - Required and optional arguments with type annotations
-    - List typed arguments
-    - Supported types: `int, float str, bool, list, List, List[str], List[int], List[float]`
-    - '-', '+', '/' as valid prefixes for option string
-    - Supports both snake-cased and dash-separated names as valid option strings
+- Basic features and functionalities.
+    - Required and optional arguments with type annotations.
+    - List typed arguments.
+    - Supported types: `int, float str, bool, list, List, List[str], List[int], List[float]`.
+    - '-', '+', '/' as valid prefixes for option string.
+    - Supports both snake-cased and dash-separated names as valid option strings.
 - Help string printing functionality.
 
 
@@ -76,7 +86,8 @@ All notable changes to this project will be documented in this file.
     - "-b", "-bleh", "a-b" both counts as the same option string ("-b" is a
     substring in all of these cases)
 
-[unreleased]: https://github.com/ntn9995/birria/compare/0.2.2...master
+[unreleased]: https://github.com/ntn9995/birria/compare/0.2.3...master
+[0.2.3]: https://github.com/ntn9995/birria/releases/tag/0.2.3
 [0.2.2]: https://github.com/ntn9995/birria/releases/tag/0.2.2
 [0.2.1]: https://github.com/ntn9995/birria/releases/tag/0.2.1
 [0.2.0]: https://github.com/ntn9995/birria/releases/tag/0.2.0
